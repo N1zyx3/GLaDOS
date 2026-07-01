@@ -10,3 +10,6 @@ __pycache__/
 # Локальные файлы данных
 history.json
 screenshots/
+
+.idea
+model/
