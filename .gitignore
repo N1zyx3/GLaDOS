@@ -1,0 +1,12 @@
+# Секреты и локальные настройки
+.env
+config.yaml
+
+# Виртуальное окружение
+.venv/
+venv/
+__pycache__/
+
+# Локальные файлы данных
+history.json
+screenshots/
