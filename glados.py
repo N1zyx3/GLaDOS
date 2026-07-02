@@ -25,8 +25,8 @@ def text_to_speech(text, tts, accentizer, custom_dict, save_to_file=False, filen
     audio = tts(accented_text, play=not save_to_file, lenght_scale=1.1)
 
     if save_to_file:
-        tts.save_wav(audio, filename)
-        print(f"Файл сохранён: {filename}")
+        tts.save_wav(audio, os.path.join(os.path.join(os.path.expanduser("~"), "Downloads"), filename))
+        print(f"Файл сохранён: {os.path.join(os.path.join(os.path.expanduser("~"), "Downloads"), filename)}")
 
 def main():
     print("[Отладка] Инициализация RUAccent...")
