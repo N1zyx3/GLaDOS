@@ -68,7 +68,7 @@ def main():
             text = input("Текст ('конец экспериментам' для выхода): ").strip()
 
             if text.lower() == "конец экспериментам":
-                text_to_speech("Это печально", tts, accentizer, custom_dict)
+                text_to_speech("Конец? Уже? А я только разогрелась...", tts, accentizer, custom_dict)
                 break
 
             if text:
