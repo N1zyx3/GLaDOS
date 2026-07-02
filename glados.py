@@ -10,12 +10,9 @@ from transliterate import translit
 load_dotenv()
 login(token=os.getenv("HF_TOKEN"))
 
-def text_to_speech(text, tts, accentizer, custom_dict):
-    """Process text and convert it to speech."""
+def text_to_speech(text, tts, accentizer, custom_dict, save_to_file=False, filename="glados.wav"):
     processed_text = text
 
-    # На всякий случай транслитерируем, если проскочит английский текст,
-    # но вообще модель должна отвечать на русском согласно промпту.
     processed_text = translit(processed_text, 'ru')
 
     # Применяем словарь ударений
@@ -24,7 +21,12 @@ def text_to_speech(text, tts, accentizer, custom_dict):
 
     # Расставляем ударения и запускаем озвучку
     accented_text = accentizer.process_all(processed_text.strip())
-    tts(accented_text, play=True, lenght_scale=1.1)
+
+    audio = tts(accented_text, play=not save_to_file, lenght_scale=1.1)
+
+    if save_to_file:
+        tts.save_wav(audio, filename)
+        print(f"Файл сохранён: {filename}")
 
 def main():
     print("[Отладка] Инициализация RUAccent...")
@@ -70,7 +72,23 @@ def main():
                 break
 
             if text:
-                text_to_speech(text, tts, accentizer, custom_dict)
+                if text.startswith("ЗАПИСЬ:"):
+                    text = text[8:].strip()
+
+                    if text:
+                        filename = "glados.wav"
+
+                        # Позволяет указать имя файла:
+                        # ЗАПИСЬ:test.wav: Привет
+                        if ":" in text:
+                            first, rest = text.split(":", 1)
+                            if first.lower().endswith(".wav"):
+                                filename = first.strip()
+                                text = rest.strip()
+
+                        text_to_speech(text, tts,accentizer, custom_dict, save_to_file=True, filename=filename)
+                else:
+                    text_to_speech(text, tts, accentizer, custom_dict)
 
     except KeyboardInterrupt:
         pass

@@ -13,4 +13,4 @@ screenshots/
 .idea/
 model/
 
-temp_mic.wav
+*.wav
