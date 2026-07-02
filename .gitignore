@@ -1,6 +1,5 @@
-# Секреты и локальные настройки
+# Локальные настройки
 .env
-config.yaml
 
 # Виртуальное окружение
 .venv/
@@ -11,5 +10,7 @@ __pycache__/
 history.json
 screenshots/
 
-.idea
+.idea/
 model/
+
+temp_mic.wav
