@@ -1,7 +1,5 @@
 print("GlaDOS initialization...")
 import os
-import yaml
-import json
 import time
 import keyboard
 import requests
