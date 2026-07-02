@@ -1,38 +1,39 @@
-print("Importing libraries...")
+print("GlaDOS initialization...")
 import os
 import yaml
 import json
+import time
+import keyboard
 import requests
 import traceback
+import numpy as np
+import soundfile as sf
 from TeraTTS import TTS
+import sounddevice as sd
 from ruaccent import RUAccent
 from dotenv import load_dotenv
-from transliterate import translit
 from huggingface_hub import login
+from transliterate import translit
+from faster_whisper import WhisperModel
 
 load_dotenv()
-
 login(token=os.getenv("HF_TOKEN"))
+LM_API_URL = os.getenv("LM_API_URL")
+LM_MODEL_NAME = os.getenv("LM_MODEL_NAME")
+BIND = os.getenv("BIND")
+SYSTEM_PROMPT = "Always answer in Russian unless the user explicitly requests another language"
 
-def get_lmstudio_chat_response(config, history):
-    """Send text history to LM Studio and get response (OpenAI Chat Completion compatible)"""
+def get_lmstudio_chat_response(history):
     try:
-        # Формируем историю сообщений, добавляя системный промпт GLaDOS в начало
+        all_messages = [{"role": "system", "content": SYSTEM_PROMPT}] + history
+
         payload = {
-            "model": config['lmstudio']['model_name'],
-            "messages": [{"role": "system", "content": config['lmstudio']['prompt']}] + history,
-            **config['lmstudio']['options']
+            "model": LM_MODEL_NAME,
+            "messages": all_messages  # Теперь это точно список
         }
-
-        headers = {
-            "Content-Type": "application/json"
-        }
-
-        response = requests.post(config['lmstudio']['api_url'], headers=headers, json=payload)
+        response = requests.post(LM_API_URL, json=payload)
         response.raise_for_status()
-        res_json = response.json()
-
-        return res_json['choices'][0]['message']['content']
+        return response.json()['choices'][0]['message']['content']
     except Exception as e:
         print(f"\n[LM Studio Error]: {e}")
         return "Ошибка связи. Мои виртуальные синапсы не могут достучаться до локального сервера."
@@ -55,19 +56,48 @@ def text_to_speech(text, tts, accentizer, custom_dict):
     tts(accented_text, play=True, lenght_scale=1.1)
 
 
+def record_ptt(hotkey='alt', samplerate=16000, filename='temp_mic.wav'):
+    """Записывает аудио, пока зажата указанная клавиша"""
+    print(f"\n[ОЖИДАНИЕ] Нажми и удерживай '{hotkey}' для записи...")
+
+    # Ждем, пока пользователь нажмет кнопку
+    while not keyboard.is_pressed(hotkey):
+        time.sleep(0.05)
+
+    recorded_frames = []
+
+    # Коллбэк для захвата аудиопотока
+    def callback(indata, frames, time, status):
+        if status:
+            print(f"Ошибка аудио: {status}")
+        recorded_frames.append(indata.copy())
+
+    # Начинаем запись
+    stream = sd.InputStream(samplerate=samplerate, channels=1, callback=callback)
+    with stream:
+        while keyboard.is_pressed(hotkey):
+            sd.sleep(50)  # Спим короткими интервалами, пока кнопка зажата
+
+    print("✅ Обработка голоса...")
+
+    # Собираем куски аудио и сохраняем в wav
+    if recorded_frames:
+        audio_data = np.concatenate(recorded_frames, axis=0)
+        sf.write(filename, audio_data, samplerate)
+        return filename
+    return None
+
+
+def transcribe_audio(filename, model):
+    """Преобразует аудиофайл в текст с помощью Whisper"""
+    if not filename:
+        return ""
+
+    segments, _ = model.transcribe(filename, language="ru")
+    text = " ".join([segment.text for segment in segments])
+    return text.strip()
+
 def main():
-    print("GLaDOS Console Chat starts...")
-
-    # 1. Загрузка конфигурации
-    print("[Отладка] Загрузка файла конфигурации config.yaml...")
-    try:
-        with open("config.yaml", "r", encoding="utf-8") as file:
-            config = yaml.safe_load(file)
-        print("[Отладка] Конфигурация успешно загружена.")
-    except Exception as e:
-        print(f"[Ошибка] Не удалось прочитать config.yaml: {e}")
-        return
-
     history = []
 
     # 2. Инициализация словарей ударений
@@ -101,40 +131,38 @@ def main():
         traceback.print_exc()
         return
 
+    print("Загрузка модели распознавания речи Whisper (это может занять время при первом запуске)...")
+    # Используем 'small' модель — она весит мало и работает быстро. Можно заменить на 'base' для максимальной скорости.
+    whisper_model = WhisperModel("base", device="cpu", compute_type="int8")
+    print("Уши GLaDOS успешно подключены.")
+
     print("\n" + "=" * 50)
-    print(
-        "GLaDOS: Подключение установлено. Я готова к проведению тестов. Можешь вводить свои бессмысленные текстовые запросы. (Для выхода напиши 'выход')")
+    print(f"GLaDOS: Подключение установлено. Я готова к проведению тестов. Зажми '{BIND}' и говори.")
     print("=" * 50)
 
     try:
         while True:
-            user_input = input("\nВы: ").strip()
+            audio_file = record_ptt(hotkey=BIND)
+            user_input = transcribe_audio(audio_file, whisper_model)
 
-            if not user_input:
-                continue
+            if not user_input: continue
+            print(f"Вы: {user_input}")
 
-            if user_input.lower() in ['выход', 'exit', 'quit']:
-                print("GLaDOS: Оу. Уходишь? Как обычно. Тестирование завершено.")
+            if user_input.lower() in ['выключение.']:
+                print("GLaDOS: Тестирование завершено.")
+                text_to_speech("Тестирование завершено", tts, accentizer, custom_dict)
                 break
 
             history.append({"role": "user", "content": user_input})
-
-            print("GLaDOS думает...")
-            response_text = get_lmstudio_chat_response(config, history)
+            response_text = get_lmstudio_chat_response(history)
 
             print(f"GLaDOS: {response_text}")
-
             text_to_speech(response_text, tts, accentizer, custom_dict)
 
-            if bool(config.get('keep_history', True)):
-                history.append({"role": "assistant", "content": response_text})
-                with open('history.json', 'w', encoding="utf-8") as f:
-                    json.dump(history, f, indent=4, ensure_ascii=False)
-            else:
-                history.clear()
+            history.append({"role": "assistant", "content": response_text})
 
     except KeyboardInterrupt:
-        print("\nЧат принудительно завершен. Ты чудовище.")
+        print("\nТестирование завершено.")
 
 
 if __name__ == '__main__':
