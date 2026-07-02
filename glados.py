@@ -1,7 +1,5 @@
 print("GlaDOS initialization...")
 import os
-import yaml
-import json
 import time
 import keyboard
 import requests
@@ -35,7 +33,7 @@ def get_lmstudio_chat_response(history):
         response.raise_for_status()
         return response.json()['choices'][0]['message']['content']
     except Exception as e:
-        print(f"\n[LM Studio Error]: {e}")
+        print(f"[LM Studio Error]: {e}")
         return "Ошибка связи. Мои виртуальные синапсы не могут достучаться до локального сервера."
 
 
@@ -58,7 +56,7 @@ def text_to_speech(text, tts, accentizer, custom_dict):
 
 def record_ptt(hotkey='alt', samplerate=16000, filename='temp_mic.wav'):
     """Записывает аудио, пока зажата указанная клавиша"""
-    print(f"\n[ОЖИДАНИЕ] Нажми и удерживай '{hotkey}' для записи...")
+    print(f"[ОЖИДАНИЕ] Нажми и удерживай '{hotkey}' для записи...")
 
     # Ждем, пока пользователь нажмет кнопку
     while not keyboard.is_pressed(hotkey):
@@ -101,7 +99,7 @@ def main():
     history = []
 
     # 2. Инициализация словарей ударений
-    print("\n[Отладка] Инициализация RUAccent...")
+    print("[Отладка] Инициализация RUAccent...")
     print("--> Если это первый запуск, сейчас скачиваются языковые модели. Пожалуйста, подождите...")
     try:
         accentizer = RUAccent()
@@ -120,7 +118,7 @@ def main():
         return
 
     # 3. Инициализация TTS (Голоса)
-    print("\n[Отладка] Загрузка голосовой модели TeraTTS...")
+    print("[Отладка] Загрузка голосовой модели TeraTTS...")
     print(
         "--> Внимание! Скачивается вес голоса GLaDOS (~1 ГБ). Это может занять несколько минут в зависимости от интернета...")
     try:
@@ -162,7 +160,7 @@ def main():
             history.append({"role": "assistant", "content": response_text})
 
     except KeyboardInterrupt:
-        print("\nТестирование завершено.")
+        print("Тестирование завершено.")
 
 
 if __name__ == '__main__':
