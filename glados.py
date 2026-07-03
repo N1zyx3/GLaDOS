@@ -3,7 +3,6 @@ import os
 import time
 import keyboard
 import requests
-import traceback
 import numpy as np
 import soundfile as sf
 import sounddevice as sd
@@ -17,9 +16,9 @@ from faster_whisper import WhisperModel
 
 load_dotenv()
 login(token=os.getenv("HF_TOKEN"))
-LM_API_URL = os.getenv("LM_API_URL")
-LM_MODEL_NAME = os.getenv("LM_MODEL_NAME")
-BIND = os.getenv("BIND")
+LM_API_URL = "http://localhost:1234/v1/chat/completions"
+LM_MODEL_NAME = "local-model"
+BIND = "end"
 SYSTEM_PROMPT = "Always answer in Russian unless the user explicitly requests another language"
 
 # Карта соответствия международных фонетических знаков (IPA) русским звукам
@@ -108,7 +107,7 @@ def text_to_speech(text, tts, accentizer, custom_dict):
     """Обрабатывает текст и озвучивает его через русскую GLaDOS."""
     # ШАГ 1: Превращаем английские слова в русское звучание по транскрипции!
     processed_text = english_to_russian_phonetics(text)
-    print(f"[Отладка] Фонетический текст для GLaDOS: {processed_text}")
+    # print(f"[Отладка] Фонетический текст для GLaDOS: {processed_text}")
 
     # ШАГ 2: Применяем кастомный словарь ударений
     for k, v in custom_dict.items():
@@ -173,8 +172,9 @@ def main():
     print("Уши GLaDOS успешно подключены.")
 
     print("\n" + "=" * 50)
-    print(f"GLaDOS: Подключение установлено. Зажми '{BIND}' и говори (Для выхода скажи 'Отбой').")
+    print(f"GLaDOS: Подключение установлено. Ошибок не обнаружено.")
     print("=" * 50)
+    text_to_speech("Подключение установлено. Ошибок не обнаружено.", tts, accentizer, custom_dict)
 
     try:
         while True:
