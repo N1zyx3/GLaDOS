@@ -6,15 +6,10 @@
 
 ## 🎧 Демонстрация озвучки (Сравнение)
 
-Вы можете оценить качество и сходство синтезированного голоса с оригиналом прямо здесь:
+Вы можете оценить качество и сходство синтезированного голоса с оригиналом:
 
-* **Оригинальный голос GLaDOS:**
-  <audio controls src="https://github.com/N1zyx3/N1zyx3/raw/refs/heads/main/files/GLaDOS/README.md/GLaDOS_original.wav"></audio>
-
-* **Синтезированный голос (TeraTTS):**
-  <audio controls src="https://github.com/N1zyx3/N1zyx3/raw/refs/heads/main/files/GLaDOS/README.md/GLaDOS_ttsl.wav"></audio>
-
-> *Если плеер не отображается, аудиофайлы можно скачать напрямую: [Оригинал](https://github.com/N1zyx3/N1zyx3/raw/refs/heads/main/files/GLaDOS/README.md/GLaDOS_original.wav) | [TTS Модель](https://github.com/N1zyx3/N1zyx3/raw/refs/heads/main/files/GLaDOS/README.md/GLaDOS_ttsl.wav)*
+* **Оригинальный голос GLaDOS из игры:** [GLaDOS_original.wav](https://github.com/N1zyx3/N1zyx3/raw/refs/heads/main/files/GLaDOS/README.md/GLaDOS_original.wav)
+* **Синтезированный голос (Модель TeraTTS):** [GLaDOS_ttsl.wav](https://github.com/N1zyx3/N1zyx3/raw/refs/heads/main/files/GLaDOS/README.md/GLaDOS_ttsl.wav)
 
 ---
 
