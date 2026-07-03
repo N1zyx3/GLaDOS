@@ -1,19 +1,83 @@
 print("GlaDOS TTS initialization...")
 import os
 import traceback
+import re
+import eng_to_ipa as ipa  # Добавили для получения точной транскрипции
 from TeraTTS import TTS
 from ruaccent import RUAccent
 from dotenv import load_dotenv
 from huggingface_hub import login
-from transliterate import translit
 
 load_dotenv()
 login(token=os.getenv("HF_TOKEN"))
 
-def text_to_speech(text, tts, accentizer, custom_dict, save_to_file=False, filename="glados.wav"):
-    processed_text = text
+# Карта соответствия международных фонетических знаков (IPA) русским звукам
+IPA_TO_RU = {
+    'heˈloʊ': 'хэл+оу', 'ˈheˈloʊ': 'хэл+оу',  # Быстрый хардкод для частых слов
+    'ɑ': 'а', 'æ': 'э', 'ʌ': 'а', 'ɔ': 'о', 'ɒ': 'о', 'ɛ': 'э', 'ɜ': 'э', 'ɪ': 'и', 'i': 'и', 'ʊ': 'у', 'u': 'у',
+    'baɪ': 'бай', 'aɪ': 'ай', 'eɪ': 'эй', 'ɔɪ': 'ой', 'oʊ': 'оу', 'aʊ': 'ау', 'ɪə': 'иэ', 'eə': 'эа', 'ʊə': 'уэ',
+    'p': 'п', 'b': 'б', 't': 'т', 'd': 'д', 'k': 'к', 'g': 'г', 'f': 'ф', 'v': 'в', 'θ': 'с', 'ð': 'з',
+    's': 'с', 'z': 'з', 'ʃ': 'ш', 'ʒ': 'ж', 'h': 'х', 'm': 'м', 'n': 'н', 'ŋ': 'нг', 'l': 'л', 'r': 'р',
+    'j': 'й', 'w': 'у', 'tʃ': 'ч', 'dʒ': 'дж', 'ˈ': '+', 'ˌ': ''
+}
 
-    processed_text = translit(processed_text, 'ru')
+
+def convert_word_to_ru_phonetics(word):
+    """Преобразует одно английское слово в его реальное русское звучание."""
+    clean_word = word.lower().strip(".,!?\"'()*-")
+    if not clean_word:
+        return word
+
+    # Получаем международную транскрипцию
+    phonetics = ipa.convert(clean_word)
+
+    # Если слово незнакомое, библиотека вернет его со звездочкой
+    if '*' in phonetics:
+        return word
+
+    phonetics = phonetics.replace('ə', 'э')  # Заменяем знаки шва
+
+    ru_sound = phonetics
+    # Заменяем дифтонги и одиночные звуки на русские буквы
+    for ipa_char, ru_char in sorted(IPA_TO_RU.items(), key=lambda x: len(x[0]), reverse=True):
+        ru_sound = ru_sound.replace(ipa_char, ru_char)
+
+    # Удаляем любые оставшиеся спецсимволы
+    ru_sound = re.sub(re.compile(r'[^а-яА-ЯёЁ+]'), '', ru_sound)
+
+    # Корректируем ударение, чтобы оно шло ПОСЛЕ гласной
+    if '+' in ru_sound:
+        ru_sound = ru_sound.replace('+', '')
+        for vowel in 'аеёиоуыэюяАЕЁИОУЫЭЮЯ':
+            if vowel in ru_sound:
+                ru_sound = ru_sound.replace(vowel, vowel + '+', 1)
+                break
+
+    return ru_sound
+
+
+def english_to_russian_phonetics(text):
+    """Находит в тексте английские слова и заменяет их на русское звучание."""
+    words = text.split()
+    processed_words = []
+    for word in words:
+        if re.search(r'[a-zA-Z]', word):
+            # Сохраняем знаки препинания вокруг слова
+            prefix = re.match(r'^[^a-zA-Z]*', word).group(0)
+            suffix = re.search(r'[^a-zA-Z]*$', word).group(0)
+            pure_word = word.strip("^.?!,()\"'-")
+
+            ru_phonetic_word = convert_word_to_ru_phonetics(pure_word)
+            processed_words.append(f"{prefix}{ru_phonetic_word}{suffix}")
+        else:
+            processed_words.append(word)
+    return " ".join(processed_words)
+
+
+def text_to_speech(text, tts, accentizer, custom_dict, save_to_file=False, filename="glados.wav"):
+    # Переводим английские слова в русскую транскрипцию вместо грубого транслита
+    processed_text = english_to_russian_phonetics(text)
+    print(f"[Отладка] Текст перед озвучкой: {processed_text}")
 
     # Применяем словарь ударений
     for k, v in custom_dict.items():
@@ -25,8 +89,10 @@ def text_to_speech(text, tts, accentizer, custom_dict, save_to_file=False, filen
     audio = tts(accented_text, play=not save_to_file, lenght_scale=1.1)
 
     if save_to_file:
-        tts.save_wav(audio, os.path.join(os.path.join(os.path.expanduser("~"), "Downloads"), filename))
-        print(f"Файл сохранён: {os.path.join(os.path.join(os.path.expanduser("~"), "Downloads"), filename)}")
+        save_path = os.path.join(os.path.join(os.path.expanduser("~"), "Downloads"), filename)
+        tts.save_wav(audio, save_path)
+        print(f"Файл сохранён: {save_path}")
+
 
 def main():
     print("[Отладка] Инициализация RUAccent...")
@@ -78,20 +144,19 @@ def main():
                     if text:
                         filename = "glados.wav"
 
-                        # Позволяет указать имя файла:
-                        # ЗАПИСЬ:test.wav: Привет
                         if ":" in text:
                             first, rest = text.split(":", 1)
                             if first.lower().endswith(".wav"):
                                 filename = first.strip()
                                 text = rest.strip()
 
-                        text_to_speech(text, tts,accentizer, custom_dict, save_to_file=True, filename=filename)
+                        text_to_speech(text, tts, accentizer, custom_dict, save_to_file=True, filename=filename)
                 else:
                     text_to_speech(text, tts, accentizer, custom_dict)
 
     except KeyboardInterrupt:
         pass
+
 
 if __name__ == '__main__':
     main()
