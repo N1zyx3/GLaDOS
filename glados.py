@@ -15,6 +15,7 @@ from faster_whisper import WhisperModel
 
 load_dotenv()
 login(token=os.getenv("HF_TOKEN"))
+spell = "Ты не обычный дурак, ты спроектированный дурак"
 
 # Карта соответствия международных фонетических знаков (IPA) русским звукам
 IPA_TO_RU = {
@@ -66,7 +67,7 @@ def calibrate_mic(samplerate=16000, duration=2.5):
 
 def record_vad(threshold, samplerate=16000, silence_limit=1.5):
     """Слушает микрофон непрерывно и записывает фразы автоматически."""
-    print("[СЛУШАЮ] Говорите... (Скажите 'выход' для завершения)")
+    print(f"[СЛУШАЮ] Говорите... (Скажите '{spell}' для завершения)")
     audio_buffer = []
     is_speaking = False
     silence_time = 0
@@ -230,7 +231,7 @@ def main():
             if not user_text: continue
             print(f"Вы сказали: {user_text}")
 
-            if user_text.lower() in ['отбой.', 'отбой', 'выход.', 'выход']:
+            if user_text.lower() in [spell, spell + '.',]:
                 text_to_speech("Эксперимент завершен. Модуль голосовой маскировки отключен.", tts, accentizer,
                                custom_dict)
                 break
