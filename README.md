@@ -4,6 +4,10 @@
 
 ---
 
+### Projects in repository: [Interactive Voice Assistant](https://github.com/N1zyx3/GLaDOS) | [TTS](https://github.com/N1zyx3/GLaDOS/tree/tts) | <u>Voice Changer</u>
+
+---
+
 ## 🎧 Демонстрация озвучки (Сравнение)
 
 Вы можете оценить качество и сходство синтезированного голоса с оригиналом:
