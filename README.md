@@ -4,6 +4,10 @@
 
 ---
 
+### Projects in repository: [Interactive Voice Assistant](https://github.com/N1zyx3/GLaDOS) | <u>TTS</u> | [Voice Changer](https://github.com/N1zyx3/GLaDOS/tree/voice-changer)
+
+---
+
 ## 🎧 Примеры озвучки (Сравнение)
 
 Вы можете скачать примеры или прослушать их напрямую в репозитории:
