@@ -1,6 +1,5 @@
 print("GlaDOS Voice Changer initialization...")
 import os
-import time
 import queue
 import numpy as np
 import soundfile as sf
